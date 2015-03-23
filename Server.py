@@ -6,12 +6,12 @@ import datetime
 import re
 
 class ClientHandler(SocketServer.BaseRequestHandler):
-    """
-    This is the ClientHandler class. Everytime a new client connects to the
-    server, a new ClientHandler object will be created. This class represents
-    only connected clients, and not the server itself. If you want to write
-    logic for the server, you must write it outside this class
-    """
+	"""
+	This is the ClientHandler class. Everytime a new client connects to the
+	server, a new ClientHandler object will be created. This class represents
+	only connected clients, and not the server itself. If you want to write
+	logic for the server, you must write it outside this class
+	"""
 	history = []
 	clients = {}
 
@@ -20,73 +20,90 @@ class ClientHandler(SocketServer.BaseRequestHandler):
 		pattern = '^\w+$'
 
 		if not re.match(pattern, username):
-			return_data = msg_format(username, 'error', 'Invalid username!')
-		elif username in clients.values():
-			return_data = msg_format(username, 'error', 'Name already taken!')
+			return_data = self.msg_format(username, 'error', 'Invalid username!')
+			self.connection.sendall(json.dumps(return_data))
+		elif username in self.clients.values():
+			return_data = self.msg_format(username, 'error', 'Name already taken!')
+			self.connection.sendall(json.dumps(return_data))
 		else:
-			clients[self.connection] = username
-			return_data = msg_format(username, 'history', history)
+			self.clients[self.connection] = username
+			messages = ""
+			for message in self.history:
+				messages += '\n' + message
+			return_data = self.msg_format(username, 'history', messages)
+			self.connection.sendall(json.dumps(return_data))
 
-		self.connection.sendall(json.dumps(return_data))
 
 	def logout(self):
-		if not self.connection in clients:
-			return_data = msg_format(None, 'error', 'Not logged in!')
+		if not self.connection in self.clients:
+			return_data = self.msg_format(None, 'error', 'Not logged in!')
 			self.connection.sendall(json.dumps(return_data))
 		else:
-			username = clients[self.connection]
-			return_data = msg_format(username, 'info', 'logout')
+			username = self.clients[self.connection]
+			return_data = self.msg_format(username, 'info', 'logout')
 			self.connection.sendall(json.dumps(return_data))
-			del clients[self.connection]
+			del self.clients[self.connection]
+			print self.clients
 
 	def send_payload(self, json_object):
-		if not self.connection in clients:
-			return_data = msg_format(None, 'error', 'Not logged in!')
+		if not self.connection in self.clients:
+			return_data = self.msg_format(None, 'error', 'Not logged in!')
+			self.connection.sendall(json.dumps(return_data))
 		else:
-			username = clients[self.connection]
+			username = self.clients[self.connection]
 			json_message = json_object.get('content')
-			message = msg_format(username, 'message', json_message)
-			history.append(message)
-
-		self.server.broadcast(json.dumps(return_data))
+			return_data = self.msg_format(username, 'message', json_message)
+			message = self.print_formatted(username, json_message)
+			self.history.append(message)
+			self.broadcast(json.dumps(return_data))
 
 	def send_info(self, info):
-		if not self.connection in clients:
-			return_data = msg_format(None, 'error', 'Not logged in!')
+		if not self.connection in self.clients:
+			return_data = self.msg_format(None, 'error', 'Not logged in!')
+			self.connection.sendall(json.dumps(return_data))
 		else:
 			if info == 'names':
-				return_data = msg_format(None, 'info', clients)
+				names = ""
+				for username in self.clients.values():
+					names += '\n' + username
+				return_data = self.msg_format(None, 'info', names)
+				self.connection.sendall(json.dumps(return_data))
 			else:
-				return_data = msg_format(None, 'info', 'You are on your own')
+				return_data = self.msg_format(None, 'info', 'You are on your own')
+				self.connection.sendall(json.dumps(return_data))
 
-			self.connection.sendall(json.dumps(return_data))
-
-	def msg_format(sender, response, content):
+	def print_formatted(self, sender, message):
 		ts = time.time()
-		st = datetime.datetime.fromtimestamp(ts).strftime('%d.%m.%Y %H:%M:%S')
+		timestamp = datetime.datetime.fromtimestamp(ts).strftime('%d.%m.%Y %H:%M:%S')
+
+		return sender + ' said @ ' + timestamp + ': ' + message
+
+	def msg_format(self, sender, response, content):
+		ts = time.time()
+		timestamp = datetime.datetime.fromtimestamp(ts).strftime('%d.%m.%Y %H:%M:%S')
 
 		return {'timestamp'	: timestamp,
-				'sender'		: sender,
+				'sender'	: sender,
 				'response'	: response,
-				'content'		: content}
+				'content'	: content}
 
 	def broadcast(self, message):
 		for client in self.clients:
 			client.sendall(message)
 
-    def handle(self):
-        """
-        This method handles the connection between a client and the server.
-        """
-        self.ip = self.client_address[0]
-        self.port = self.client_address[1]
-        self.connection = self.request
+	def handle(self):
+		"""
+		This method handles the connection between a client and the server.
+		"""
+		self.ip = self.client_address[0]
+		self.port = self.client_address[1]
+		self.connection = self.request
 
 		print 'Client connected @' + self.ip + ':' + str(self.port)
 
-        # Loop that listens for messages from the client
-        while True:
-            received_string = self.connection.recv(4096)
+		# Loop that listens for messages from the client
+		while True:
+			received_string = self.connection.recv(4096)
 			if received_string:
 				json_object = json.loads(received_string)
 				request = json_object.get('request')
@@ -105,24 +122,24 @@ class ClientHandler(SocketServer.BaseRequestHandler):
 		print 'Client disconnected @' + self.ip + ':' + str(self.port)
 
 class ThreadedTCPServer(SocketServer.ThreadingMixIn, SocketServer.TCPServer):
-    """
-    This class is present so that each client connected will be ran as a own
-    thread. In that way, all clients will be served by the server.
+	"""
+	This class is present so that each client connected will be ran as a own
+	thread. In that way, all clients will be served by the server.
 
-    No alterations is necessary
-    """
-    allow_reuse_address = True
+	No alterations is necessary
+	"""
+	allow_reuse_address = True
 
 if __name__ == "__main__":
-    """
-    This is the main method and is executed when you type "python Server.py"
-    in your terminal.
+	"""
+	This is the main method and is executed when you type "python Server.py"
+	in your terminal.
 
-    No alterations is necessary
-    """
-    HOST, PORT = 'localhost', 9998
-    print 'Server running...'
+	No alterations is necessary
+	"""
+	HOST, PORT = 'localhost', 9998
+	print 'Server running...'
 
-    # Set up and initiate the TCP server
-    server = ThreadedTCPServer((HOST, PORT), ClientHandler)
-    server.serve_forever()
+	# Set up and initiate the TCP server
+	server = ThreadedTCPServer((HOST, PORT), ClientHandler)
+	server.serve_forever()

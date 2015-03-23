@@ -4,103 +4,91 @@ import json
 import socket
 
 class Client:
-    """
-    This is the chat client class
-    """
+	"""
+	This is the chat client class
+	"""
 
-    def __init__(self, host, server_port):
-        """
-        This method is run when creating a new Client object
-        """
+	def __init__(self, host, server_port):
+		"""
+		This method is run when creating a new Client object
+		"""
+		# Set up the socket connection to the server
+		self.connection = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+		self.connection.connect((host, server_port))
+		self.run()
 
-        # Set up the socket connection to the server
-        self.connection = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-        self.run()
+		print "Welcome to login menu"
+		while True:
+			data = raw_input()
+			self.send_payload(data)
 
-        # TODO: Finish init process with necessary code
-        server_thread = MessageReceiver(client, self.connection)
-        server_thread.start() 
-        
-        while True:
-            data = raw_input('>> ')
-            self.send_payload(data)
-        
-    def run(self):
-        # Initiate the connection to the server
-        self.connection.connect((self.host, self.server_port))
+	def run(self):
+		# Initiate the connection to the server
+		server_thread = MessageReceiver(self, self.connection)
+		server_thread.daemon = True
+		server_thread.start()
 
-    def disconnect(self):
-        # TODO: Handle disconnection
-        self.connection.close()
+	def disconnect(self):
+		# TODO: Handle disconnection
+		self.connection.force_disconnect()
 
-    def receive_message(self, message):
-        # TODO: Handle incoming message
-        data = json.loads(message)
+	def receive_message(self, message):
+		data = json.loads(message)
 
-        if data.get('response') == 'error':
-            # print error message
-            print data.get('content')
-            
-        elif data.get('response') == 'info':
-            if data.get('content') == 'logout':
-                print 'Goodbye ' + data.get('sender') + '!'
-                self.disconnect()
-            else:
-                print data.get('content')
+		if data.get('response') == 'error':
+			# print error message
+			print data.get('content')
+		elif data.get('response') == 'info':
+			if data.get('content') == 'logout':
+				print 'Goodbye ' + data.get('sender') + '!'
+			else:
+				print "INFO: " + data.get('content')
+		elif data.get('response') == 'history':
+			history = data.get('content') # list of JSON responses
+			print 'Welcome ' + data.get('sender') + '! ' + history
+		elif data.get('response') == 'message':
+			# print message
+			print self.print_formatted(data.get('sender'),data.get('timestamp'),data.get('content'))
 
-        elif data.get('response') == 'history':
-            print 'Welcome ' + data.get('sender') + '!'
-            history = data.get('content') # list of JSON responses
-            # print history
-            
-        elif data.get('response') == 'message':
-            # print message
-            print print_formatted(data.get('sender'),data.get('timestamp'),data.get('content'))
-        
+	def send_payload(self, data):
+		# WIP
+		if data.startswith('login'):
+			username = data.lstrip('login ')
+			data = self.msg_format('login', username)
+			self.connection.sendall(json.dumps(data))
+		elif data.startswith('logout'):
+			data = self.msg_format('logout', None)
+			self.connection.sendall(json.dumps(data))
+		elif data.startswith('msg'):
+			message = data.lstrip('msg ')
+			print message
+			data = self.msg_format('msg', message)
+			self.connection.sendall(json.dumps(data))
+		elif data.startswith('help'):
+			data = self.msg_format('help', None)
+			self.connection.sendall(json.dumps(data))
+		elif data.startswith('names'):
+			data = self.msg_format('names', None)
+			self.connection.sendall(json.dumps(data))
+		else:
+			if len(data) > 0:
+				print data.split()[0] + ' is not a valid command!'
+			else:
+				print 'Not a valid command!'
 
-    def send_payload(self, data):
-        # WIP
-        if data.startswith("login"):
-            username = data.lstrip('login ')
-            data = msg_format('login', username)
-            self.connection.sendall(json.dumps(data))
-            
-        elif data.startswith("logout"):
-            data = msg_format('logout', None)
-            self.connection.sendall(json.dumps(data))
-            
-        elif data.startswith("msg"):
-            message = data.lstrip('msg ')
-            data = msg_format('msg', message)
-            self.connection.sendall(json.dumps(data))
-            
-        elif data.startswith("help"):
-            data = msg_format('help', None)
-            self.connection.sendall(json.dumps(data))
-            
-        elif data.startswith("names"):
-            data = msg_format('names', None)
-            self.connection.sendall(json.dumps(data))
-            
-        else:
-            print data.split()[0] + ' is not a valid command!'
-        
+	def msg_format(self, request, content):
+		# Wait for data from the client
+		return {'request': request, 'content': content}
 
-
-    def msg_format(request, content):                                                 
-        # Wait for data from the client
-        return {'request': request, 'content': content}
-
-    def print_formatted(sender,timestamp,message):
-        return sender + ' said @ ' + timestamp + ': ' + message
-
+	def print_formatted(self, sender, timestamp, message):
+		return sender + ' said @ ' + timestamp + ': ' + message
 
 if __name__ == '__main__':
-    """
-    This is the main method and is executed when you type "python Client.py"
-    in your terminal.
+	"""
+	This is the main method and is executed when you type "python Client.py"
+	in your terminal.
 
-    No alterations is necessary
-    """
-    
-    client = Client('localhost', 9998)
+	No alterations is necessary
+	"""
+
+	client = Client('localhost', 9998)
