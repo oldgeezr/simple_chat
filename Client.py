@@ -18,7 +18,7 @@ class Client:
 		self.connection.connect((host, server_port))
 		self.run()
 
-		print "Welcome to login menu"
+		print "Welcome to login menu\n Login: login <username>"
 		while True:
 			data = raw_input()
 			self.send_payload(data)
@@ -54,7 +54,7 @@ class Client:
 	def send_payload(self, data):
 		# WIP
 		if re.match('login\s+(\S+)\s*$', data):
-                        username = re.match('login\s+(\S+)\s*$', data).group(1)
+			username = re.match('login\s+(\S+)\s*$', data).group(1)
 			#username = data.lstrip('login ')
 			data = self.msg_format('login', username)
 			self.connection.sendall(json.dumps(data))

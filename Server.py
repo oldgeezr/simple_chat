@@ -58,19 +58,15 @@ class ClientHandler(SocketServer.BaseRequestHandler):
 			self.broadcast(json.dumps(return_data))
 
 	def send_info(self, info):
-		if not self.connection in self.clients:
-			return_data = self.msg_format(None, 'error', 'Not logged in!')
+		if info == 'names':
+			names = ""
+			for username in self.clients.values():
+				names += '\n' + username
+			return_data = self.msg_format(None, 'info', names)
 			self.connection.sendall(json.dumps(return_data))
 		else:
-			if info == 'names':
-				names = ""
-				for username in self.clients.values():
-					names += '\n' + username
-				return_data = self.msg_format(None, 'info', names)
-				self.connection.sendall(json.dumps(return_data))
-			else:
-				return_data = self.msg_format(None, 'info', 'You are on your own')
-				self.connection.sendall(json.dumps(return_data))
+			return_data = self.msg_format(None, 'info', 'Welcome to the Chat!\n\n login 	- login <username>\n msg 	- msg <your message here>\n help 	- help (list this info)\n names 	- names (list names of connected clients\n logout 	- duh ..\n')
+			self.connection.sendall(json.dumps(return_data))
 
 	def print_formatted(self, sender, message):
 		ts = time.time()
@@ -110,6 +106,7 @@ class ClientHandler(SocketServer.BaseRequestHandler):
 
 				if request == 'login':
 					self.login(json_object)
+					self.send_info('help')
 				elif request == 'logout':
 					self.logout()
 				elif request == 'names' or request == 'help':
