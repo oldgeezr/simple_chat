@@ -2,6 +2,7 @@
 from MessageReceiver import MessageReceiver
 import json
 import socket
+import re
 
 class Client:
 	"""
@@ -52,15 +53,16 @@ class Client:
 
 	def send_payload(self, data):
 		# WIP
-		if data.startswith('login'):
-			username = data.lstrip('login ')
+		if re.match('login\s+([a-zA-Z0-9]+)\s*$', data):
+                        username = re.match('login\s+([a-zA-Z0-9]+)\s*$', data).group(1)
+			#username = data.lstrip('login ')
 			data = self.msg_format('login', username)
 			self.connection.sendall(json.dumps(data))
 		elif data.startswith('logout'):
 			data = self.msg_format('logout', None)
 			self.connection.sendall(json.dumps(data))
-		elif data.startswith('msg'):
-			message = data.lstrip('msg ')
+		elif re.match('msg\s+(.*)$', data):
+			message = re.match('msg\s+(.*)$', data).group(1)
 			print message
 			data = self.msg_format('msg', message)
 			self.connection.sendall(json.dumps(data))
@@ -72,7 +74,7 @@ class Client:
 			self.connection.sendall(json.dumps(data))
 		else:
 			if len(data) > 0:
-				print data.split()[0] + ' is not a valid command!'
+				print data + ' is not a valid command!'
 			else:
 				print 'Not a valid command!'
 
