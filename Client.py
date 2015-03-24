@@ -53,8 +53,8 @@ class Client:
 
 	def send_payload(self, data):
 		# WIP
-		if re.match('login\s+([a-zA-Z0-9]+)\s*$', data):
-                        username = re.match('login\s+([a-zA-Z0-9]+)\s*$', data).group(1)
+		if re.match('login\s+(\S+)\s*$', data):
+                        username = re.match('login\s+(\S+)\s*$', data).group(1)
 			#username = data.lstrip('login ')
 			data = self.msg_format('login', username)
 			self.connection.sendall(json.dumps(data))
