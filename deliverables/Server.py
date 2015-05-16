@@ -65,7 +65,7 @@ class ClientHandler(SocketServer.BaseRequestHandler):
 			return_data = self.msg_format(None, 'info', names)
 			self.connection.sendall(json.dumps(return_data))
 		else:
-			return_data = self.msg_format(None, 'info', 'Welcome to the Chat!\n\n login		- login <username>\n msg	- msg <your message here>\n help	- help (list this info)\n names		- names (list names of connected clients\n logout		- duh ..\n')
+			return_data = self.msg_format(None, 'info', 'Welcome to the Chat!\n\n login 	- login <username>\n msg 	- msg <your message here>\n help 	- help (list this info)\n names 	- names (list names of connected clients\n logout 	- duh ..\n')
 			self.connection.sendall(json.dumps(return_data))
 
 	def print_formatted(self, sender, message):
@@ -134,7 +134,7 @@ if __name__ == "__main__":
 
 	No alterations is necessary
 	"""
-	HOST, PORT = '78.91.6.89', 9998
+	HOST, PORT = 'localhost', 9998
 	print 'Server running...'
 
 	# Set up and initiate the TCP server

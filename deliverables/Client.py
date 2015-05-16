@@ -61,12 +61,11 @@ class Client:
 		elif data.startswith('logout'):
 			data = self.msg_format('logout', None)
 			self.connection.sendall(json.dumps(data))
-    #elif re.match('msg\s+(.*)$', data):
-      # TODO: remove the msg command
-      #message = re.match('msg\s+(.*)$', data).group(1)
-      #print message
-      #data = self.msg_format('msg', message)
-      #self.connection.sendall(json.dumps(data))
+		elif re.match('msg\s+(.*)$', data):
+			message = re.match('msg\s+(.*)$', data).group(1)
+			print message
+			data = self.msg_format('msg', message)
+			self.connection.sendall(json.dumps(data))
 		elif data.startswith('help'):
 			data = self.msg_format('help', None)
 			self.connection.sendall(json.dumps(data))
@@ -75,9 +74,7 @@ class Client:
 			self.connection.sendall(json.dumps(data))
 		else:
 			if len(data) > 0:
-        # send msg
-				data = self.msg_format('msg', data)
-				self.connection.sendall(json.dumps(data))
+				print data + ' is not a valid command!'
 			else:
 				print 'Not a valid command!'
 
@@ -96,4 +93,4 @@ if __name__ == '__main__':
 	No alterations is necessary
 	"""
 
-	client = Client('78.91.6.89', 9998)
+	client = Client('localhost', 9998)
