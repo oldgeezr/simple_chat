@@ -65,7 +65,12 @@ class ClientHandler(SocketServer.BaseRequestHandler):
 			return_data = self.msg_format(None, 'info', names)
 			self.connection.sendall(json.dumps(return_data))
 		else:
-			return_data = self.msg_format(None, 'info', 'Welcome to the Chat!\n\n login		- login <username>\n msg	- msg <your message here>\n help	- help (list this info)\n names		- names (list names of connected clients\n logout		- duh ..\n')
+			return_data = self.msg_format(None, 'info',
+	'Welcome to the Chat!\n\n \
+	login	- login <username>\n  \
+	help	- list command description\n \
+	names	- list names of connected clients\n \
+	logout	- logout of the chat\n')
 			self.connection.sendall(json.dumps(return_data))
 
 	def print_formatted(self, sender, message):

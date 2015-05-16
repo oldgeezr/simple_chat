@@ -3,6 +3,7 @@ from MessageReceiver import MessageReceiver
 import json
 import socket
 import re
+import time
 
 class Client:
 	"""
@@ -20,8 +21,9 @@ class Client:
 
 		print "Welcome to login menu\n Login: login <username>"
 		while True:
-			data = raw_input()
+			data = raw_input('\n>> ')
 			self.send_payload(data)
+			time.sleep(0.1)
 
 	def run(self):
 		# Initiate the connection to the server
@@ -43,7 +45,7 @@ class Client:
 			if data.get('content') == 'logout':
 				print 'Goodbye ' + data.get('sender') + '!'
 			else:
-				print "INFO: " + data.get('content')
+				print "Online users:" + data.get('content')
 		elif data.get('response') == 'history':
 			history = data.get('content') # list of JSON responses
 			print 'Welcome ' + data.get('sender') + '! ' + history
